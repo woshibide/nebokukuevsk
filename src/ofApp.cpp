@@ -26,12 +26,15 @@ float hbPhase = 0.0f;
 float lastChangeTime = 0.0f;
 
 // shape params
-float currentViolence = 5.0f;
-float targetViolence = 5.0f;
 float opacity = 255.0f;
 
+float currentViolence = 5.0f;
 float currentAmplitude = 5.0f;
+float currentSpeed = 5.0f;
+
+float targetViolence = 5.0f;
 float targetAmplitude = 5.0f;
+float targetSpeed = 5.0f;
 
 // network
 int messageCounter = 0;
@@ -77,8 +80,11 @@ void ofApp::setup()
      *    Network    *
      *****************/
 
+
+
     // OF talks to pure data via 127.0.0.1:11999
     ofxUDPSettings settings;
+
     settings.sendTo("127.0.0.1", 11999);
     settings.blocking = false;
 
@@ -112,7 +118,8 @@ void ofApp::update()
         message += ofToString(currentViolence) + " ";      // violence
         message += ofToString(currentAmplitude) + " ";     // amplitude
         message += ofToString(opacity) + " ";              // opacity
-        message += ofToString(changeInterval) + "\n";      // interval
+        message += ofToString(changeInterval) + " ";       // interval
+        message += ofToString(speedDampen) + "\n";         // speed
 
         // std::cout << "message to be sent:\n " << message << std::endl;
         udpConnection.Send(message.c_str(), message.length());
@@ -144,14 +151,18 @@ void ofApp::update()
         targetAmplitude = ofRandom(1, 5); // targets
         targetViolence = ofMap(changeInterval, hbOffset - hbAmp, hbOffset + hbAmp, 1, 20);
         targetAmplitude = ofMap(changeInterval, hbOffset - hbAmp, hbOffset + hbAmp, 1, 20);
+        targetSpeed = ofMap(changeInterval, hbOffset - hbAmp, hbOffset + hbAmp, 1, 5);
 
         lastChangeTime = currentTime;
     }
 
     // ease towards the target violence
-    float easeAmount = 0.025f;
+    // float easeAmount = 1.25f;
+    easeAmount = ofMap(changeInterval, hbOffset - hbAmp, hbOffset + hbAmp, 0.05f, 1.5f);
+
     currentViolence += (targetViolence - currentViolence) * easeAmount;
     currentAmplitude += (targetAmplitude - currentAmplitude) * easeAmount;
+    currentSpeed += (targetSpeed - currentSpeed) * easeAmount;
 
     glm::vec3 position = model.getPosition();
     cam.lookAt(position);
@@ -196,7 +207,8 @@ if (ofRandom(1.0) < 1 && opacity < 10.0f) // chance
     ofDrawBitmapString("violence: " + ofToString(currentViolence), 10, 10);
     ofDrawBitmapString("interval: " + ofToString(changeInterval), 10, 30);
     ofDrawBitmapString("amplitude: " + ofToString(currentAmplitude), 10, 50);
-    ofDrawBitmapString("opacity: " + ofToString(opacity), 10, 70);
+    ofDrawBitmapString("speed: " + ofToString(currentSpeed), 10, 70);
+    ofDrawBitmapString("opacity: " + ofToString(opacity), 10, 90);
 
     // network example
     for (unsigned int i = 1; i < stroke.size(); i++)
@@ -258,9 +270,8 @@ void ofApp::drawWithMesh()
     // float violence = ofMap(mouseX, 0, ofGetWidth(), 1, 20);
     violence = currentViolence;
     amplitude = currentAmplitude;
+    speedDampen = currentSpeed;
 
-    // float amplitude = 5.0f;
-    float speedDampen = 5.0f;
     auto &verts = mesh.getVertices();
 
     for (unsigned int i = 0; i < verts.size(); i++)

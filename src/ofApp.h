@@ -42,8 +42,10 @@ public:
 	float violence;
 	float amplitude;
 	float opacity;
+	float speedDampen;
 
 	// easing out
+	float easeAmount;
 	float currentTime;
 	float changeInterval;
 	
