@@ -1,0 +1,4 @@
+#N canvas 380 131 450 300 12;
+#X obj 129 109 print UDP-FUDI;
+#X obj 129 81 netreceive -u 11999;
+#X connect 1 0 0 0;

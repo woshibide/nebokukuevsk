@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "${workspaceRoot}/../of_v0.12.0_osx_release/libs/openFrameworks"
+		},
+		{
+			"path": "${workspaceRoot}/../of_v0.12.0_osx_release/addons/openFrameworks"
+		}
+	],
+	"settings": {}
+}
