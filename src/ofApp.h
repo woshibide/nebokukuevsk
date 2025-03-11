@@ -39,7 +39,7 @@ public:
 	void gotMessage(ofMessage msg);
 
 	// shape params
-	float liquidness;
+	float violence;
 	float amplitude;
 	float opacity;
 
@@ -56,8 +56,13 @@ public:
 
 
 	// network params
+	// pure data
 	ofxUDPManager udpConnection;
 	ofTrueTypeFont mono;
 	ofTrueTypeFont monosm;
 	vector<glm::vec3> stroke;
+
+	// raspberry pi
+	ofxUDPManager udpReceiver;
+	char udpMessage[1024];
 };
