@@ -65,11 +65,11 @@ void ofApp::setup()
     // model.loadModel("characters/head.dae");
     // model.loadModel("characters/bust.dae");
     model.setPosition(ofGetWidth() * .5, ofGetHeight() * 0.5, 0);
-    model.setScale(2.0f, 2.0f, 2.0f);
+    model.setScale(1.0f, 1.0f, 1.0f);
 
-    cam.setDistance(500);
+    cam.setDistance(1500);
     cam.setNearClip(10);
-    cam.setFarClip(5000);
+    cam.setFarClip(10000);
 
     // light.enable();
     // light.setPosition(model.getPosition() + glm::vec3(0, 0, 600));
@@ -99,6 +99,8 @@ void ofApp::setup()
 
 void ofApp::update()
 {
+
+    
 
     currentTime = ofGetElapsedTimef();
 
@@ -151,14 +153,14 @@ void ofApp::update()
         targetAmplitude = ofRandom(1, 5); // targets
         targetViolence = ofMap(changeInterval, hbOffset - hbAmp, hbOffset + hbAmp, 1, 20);
         targetAmplitude = ofMap(changeInterval, hbOffset - hbAmp, hbOffset + hbAmp, 1, 20);
-        targetSpeed = ofMap(changeInterval, hbOffset - hbAmp, hbOffset + hbAmp, 1, 5);
+        targetSpeed = ofMap(changeInterval, hbOffset - hbAmp, hbOffset + hbAmp, 1, 10);
 
         lastChangeTime = currentTime;
     }
 
     // ease towards the target violence
     // float easeAmount = 1.25f;
-    easeAmount = ofMap(changeInterval, hbOffset - hbAmp, hbOffset + hbAmp, 0.05f, 1.5f);
+    easeAmount = ofMap(changeInterval, hbOffset - hbAmp, hbOffset + hbAmp,  1.0f, 0.05f);
 
     currentViolence += (targetViolence - currentViolence) * easeAmount;
     currentAmplitude += (targetAmplitude - currentAmplitude) * easeAmount;
@@ -204,12 +206,15 @@ if (ofRandom(1.0) < 1 && opacity < 10.0f) // chance
 
     ofSetColor(255);
 
-    ofDrawBitmapString("violence: " + ofToString(currentViolence), 10, 10);
-    ofDrawBitmapString("interval: " + ofToString(changeInterval), 10, 30);
-    ofDrawBitmapString("amplitude: " + ofToString(currentAmplitude), 10, 50);
-    ofDrawBitmapString("speed: " + ofToString(currentSpeed), 10, 70);
-    ofDrawBitmapString("opacity: " + ofToString(opacity), 10, 90);
-
+    // ofDrawBitmapString("violence: " + ofToString(currentViolence), 10, 10);
+    // ofDrawBitmapString("interval: " + ofToString(changeInterval), 10, 30);
+    // ofDrawBitmapString("amplitude: " + ofToString(currentAmplitude), 10, 50);
+    // ofDrawBitmapString("speed: " + ofToString(currentSpeed), 10, 70);
+    // ofDrawBitmapString("opacity: " + ofToString(opacity), 10, 90);
+    
+    ofDrawBitmapString("distance: " + ofToString(cam.getDistance()), 20, ofGetHeight() - 200);
+    ofDrawBitmapString("easing: " + ofToString(easeAmount), 20, ofGetHeight() - 180);
+    
     // network example
     for (unsigned int i = 1; i < stroke.size(); i++)
     {
