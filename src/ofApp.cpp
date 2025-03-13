@@ -36,8 +36,14 @@ float targetViolence = 5.0f;
 float targetAmplitude = 5.0f;
 float targetSpread = 5.0f;
 
+// Fix this incorrect declaration
+// camDis = 1500;
+float camDis = 1500;    // Define it properly as a float
+int targetCamDis = 1500;
+
 // network
 int messageCounter = 0;
+bool isItUDPTime = true;
 
 // raspberry pi receiver
 float lastUdpSendTime;
@@ -71,21 +77,19 @@ void ofApp::setup()
     cam.setNearClip(10);
     cam.setFarClip(10000);
 
-    // light.enable();
-    // light.setPosition(model.getPosition() + glm::vec3(0, 0, 600));
-
+    
     lastChangeTime = ofGetElapsedTimef();
 
     /****************
      *    Network    *
      *****************/
-
+    
     // OF talks to pure data via 127.0.0.1:11999
     ofxUDPSettings settings;
-
+    
     settings.sendTo("127.0.0.1", 11999);
     settings.blocking = false;
-
+    
     udpReceiver.Create();
     udpReceiver.Bind(12000); // ame port as the Raspberry Pi server
     udpReceiver.SetNonBlocking(true);
@@ -98,16 +102,31 @@ void ofApp::setup()
 void ofApp::update()
 {
 
+    /*************************
+       raspberry pi receiver
+    **************************/
+   int bytesReceived = udpReceiver.Receive(udpMessage, 1024);
+   if (bytesReceived > 0)
+   {
+       udpMessage[bytesReceived] = '\0'; // Null-terminate the string
+       std::string message(udpMessage);
+       std::cout << "received from raspberry pi: " << message << std::endl;
+   }
+
+    normalizedTime = ofClamp(timeSinceChange / changeInterval, 0, 1);
+    easedTime = 1 - pow(1 - normalizedTime, 3); // cubic ease out
+
     currentTime = ofGetElapsedTimef();
 
-    bool isItUDPTime = true;
-    int currentFrame = ofGetFrameNum();
-    isItUDPTime = currentFrame % 2 == 0;
-
+    
     /*********************
-       pure data sender
-    **********************/
-    if (isItUDPTime)
+     pure data sender
+     **********************/
+   
+   int currentFrame = ofGetFrameNum();
+   isItUDPTime = currentFrame % 2 == 0;
+   
+   if (isItUDPTime)
     {
         messageCounter++;
         // in pd from left to right:
@@ -123,33 +142,22 @@ void ofApp::update()
         udpConnection.Send(message.c_str(), message.length());
     }
 
-    /*************************
-       raspberry pi receiver
-    **************************/
-    int bytesReceived = udpReceiver.Receive(udpMessage, 1024);
-    if (bytesReceived > 0)
-    {
-        udpMessage[bytesReceived] = '\0'; // Null-terminate the string
-        std::string message(udpMessage);
-        std::cout << "received from raspberry pi: " << message << std::endl;
-    }
+    
 
     currentTime = ofGetElapsedTimef();
 
-    // simple trigonometry for build up and down of the tempo.
+    // simple trigonometry for build up and down of the tempo
     // TODO: instead of sin cos tan use raspberry pi with distance sensor
     // TODO: if nobody is around pick either sin or tan and play a loop
-    // changeInterval = hbAmp * sin(hbFreq * currentTime + hbPhase) + hbOffset;
-    changeInterval = ofMap(ofGetMouseY(), 0, ofGetHeight(), 0.4f, 0.99f);
+     changeInterval = hbAmp * sin(hbFreq * currentTime + hbPhase) + hbOffset;
     // if value is above 1 shit breaks
-    // tan is also very fun
 
-    // check if it's time to change the target violence
+
+    // these targets will gradually change over specified interval
     if (currentTime - lastChangeTime > changeInterval)
     {
-        targetAmplitude = ofRandom(1, 5); // targets
         targetViolence = smoothRemapper(1.0f, 20.0f);
-        targetAmplitude = smoothRemapper(0.5f, 20.0f);
+        targetAmplitude = smoothRemapper(0.5f, 30.0f);
         targetSpread = smoothRemapper(0.5f, 20.0f);
 
         lastChangeTime = currentTime;
@@ -157,11 +165,16 @@ void ofApp::update()
 
     // ease towards the target violence
     // float easeAmount = 0.25f;
-    // easeAmount = ofMap(changeInterval, hbOffset - hbAmp, hbOffset + hbAmp, 1.0f, 0.05f);
+    easeAmount = ofMap(changeInterval, hbOffset - hbAmp, hbOffset + hbAmp, 1.0f, 0.05f);
 
     currentViolence += (targetViolence - currentViolence) * easeAmount;
     currentAmplitude += (targetAmplitude - currentAmplitude) * easeAmount;
     currentSpread += (targetSpread - currentSpread) * easeAmount;
+    camDis += (targetCamDis - camDis) * easeAmount;
+    
+    // Apply camera distance
+    cam.setDistance(camDis);
+    
 
     glm::vec3 position = model.getPosition();
     cam.lookAt(position);
@@ -174,9 +187,12 @@ void ofApp::draw()
 
     // TODO: this happens three times in the code
     float currentTime = ofGetElapsedTimef();
-    float timeSinceChange = currentTime - lastChangeTime;
+    timeSinceChange = currentTime - lastChangeTime;
 
-    // opacity gradual drop off
+    opacity = ofMap(easedTime, 0, 1, 255, 0);
+    
+
+    // // opacity gradual drop off
     opacity = ofMap(timeSinceChange, 0, changeInterval, 255, 0, true);
     opacity = ofClamp(opacity, 0, 255); // ensure opacity is within 0-255
 
@@ -192,6 +208,10 @@ void ofApp::draw()
             ofSleepMillis(2000);
         */
     }
+    // Apply cubic ease-in for opacity using pow()
+    float opacityGain = pow(normalizedTime, 3); // Cubic ease-in
+    opacity = ofMap(opacityGain, 0, 1, 0, 255);
+    targetCamDis = ofMap(opacity, 0, 255, 1500, 1200); 
     ofSetColor(255, 255, 255, opacity);
 
     drawWithMesh();
@@ -206,9 +226,9 @@ void ofApp::draw()
     ofDrawBitmapString("spread: " + ofToString(currentSpread), 20, 100);
     ofDrawBitmapString("opacity: " + ofToString(opacity), 20, 120);
 
-    ofDrawBitmapString("fps: " + ofToString(ofGetFrameRate()), 20, ofGetHeight() - 220);
-    ofDrawBitmapString("distance: " + ofToString(cam.getDistance()), 20, ofGetHeight() - 200);
-    ofDrawBitmapString("easing: " + ofToString(easeAmount), 20, ofGetHeight() - 180);
+    ofDrawBitmapString("fps: " + ofToString(ofGetFrameRate()), 20, ofGetHeight() - 40);
+    ofDrawBitmapString("distance: " + ofToString(cam.getDistance()), 20, ofGetHeight() - 60);
+    ofDrawBitmapString("easing: " + ofToString(easeAmount), 20, ofGetHeight() - 80);
 
     // network example
     for (unsigned int i = 1; i < stroke.size(); i++)
@@ -264,12 +284,11 @@ void ofApp::drawWithMesh()
     // translate and scale based on the positioning
     ofTranslate(position);
     // ofRotateDeg(ofGetMouseX() + 270, 0, 1, 0);
-    ofRotateDeg(90, 1, 2, 0);
+    //ofRotateDeg(90, 1, 2, 0);
 
     ofScale(normalizedScale, normalizedScale, normalizedScale);
     ofScale(scale.x, scale.y, scale.z);
 
-    // modify mesh with some noise
 
     // float violence = ofMap(mouseX, 0, ofGetWidth(), 1, 20);
     violence = currentViolence;
@@ -323,13 +342,13 @@ void ofApp::mouseMoved(int x, int y)
 //--------------------------------------------------------------
 void ofApp::mouseDragged(int x, int y, int button)
 {
-    stroke.push_back(glm::vec3(x, y, 0));
+    // stroke.push_back(glm::vec3(x, y, 0));
 }
 
 //--------------------------------------------------------------
 void ofApp::mousePressed(int x, int y, int button)
 {
-    stroke.clear();
+    // stroke.clear();
 }
 
 //--------------------------------------------------------------

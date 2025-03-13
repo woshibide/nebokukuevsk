@@ -51,13 +51,17 @@ public:
 	float easeAmount;
 	float currentTime;
 	float changeInterval;
+
+	float timeSinceChange;
+	float normalizedTime;
+	float easedTime;
 	
 	// this is our model we'll draw
 	ofxAssimpModelLoader model;
-	ofEasyCam cam;
-	ofLight light;
 	void drawWithModel();
 	void drawWithMesh();
+	ofEasyCam cam;
+	float camDis;
 
 
 	// network params
