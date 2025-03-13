@@ -38,6 +38,9 @@ public:
 	void dragEvent(ofDragInfo dragInfo);
 	void gotMessage(ofMessage msg);
 
+	// utilities
+    float smoothRemapper(float outputMin, float outputMax);
+
 	// shape params
 	float violence;
 	float amplitude;

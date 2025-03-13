@@ -17,11 +17,11 @@
 
 // smooth change
 float changeInterval = 0.5f; // heartbeat
-                              // adrenaline spikes
+                             // adrenaline spikes
 float hbOffset = 0.7f;
 float hbAmp = 0.3f;
 float hbFreq = 0.2f;
-float hbPhase = 0.0f;
+float hbPhase = 3.0f;
 
 float lastChangeTime = 0.0f;
 
@@ -30,11 +30,11 @@ float opacity = 255.0f;
 
 float currentViolence = 5.0f;
 float currentAmplitude = 5.0f;
-float currentSpeed = 5.0f;
+float currentSpread = 5.0f;
 
 float targetViolence = 5.0f;
 float targetAmplitude = 5.0f;
-float targetSpeed = 5.0f;
+float targetSpread = 5.0f;
 
 // network
 int messageCounter = 0;
@@ -80,8 +80,6 @@ void ofApp::setup()
      *    Network    *
      *****************/
 
-
-
     // OF talks to pure data via 127.0.0.1:11999
     ofxUDPSettings settings;
 
@@ -99,8 +97,6 @@ void ofApp::setup()
 
 void ofApp::update()
 {
-
-    
 
     currentTime = ofGetElapsedTimef();
 
@@ -121,7 +117,7 @@ void ofApp::update()
         message += ofToString(currentAmplitude) + " ";     // amplitude
         message += ofToString(opacity) + " ";              // opacity
         message += ofToString(changeInterval) + " ";       // interval
-        message += ofToString(speedDampen) + "\n";         // speed
+        message += ofToString(speedDampen) + "\n";         // spread
 
         // std::cout << "message to be sent:\n " << message << std::endl;
         udpConnection.Send(message.c_str(), message.length());
@@ -140,31 +136,32 @@ void ofApp::update()
 
     currentTime = ofGetElapsedTimef();
 
-    // simple trigonometry for build up and down of the tempo. 
+    // simple trigonometry for build up and down of the tempo.
     // TODO: instead of sin cos tan use raspberry pi with distance sensor
-            // TODO: if nobody is around pick either sin or tan and play a loop
-    changeInterval = hbAmp * sin(hbFreq * currentTime + hbPhase) + hbOffset;
-                            // tan is also very fun
+    // TODO: if nobody is around pick either sin or tan and play a loop
+    // changeInterval = hbAmp * sin(hbFreq * currentTime + hbPhase) + hbOffset;
+    changeInterval = ofMap(ofGetMouseY(), 0, ofGetHeight(), 0.4f, 0.99f);
+    // if value is above 1 shit breaks
+    // tan is also very fun
 
     // check if it's time to change the target violence
     if (currentTime - lastChangeTime > changeInterval)
-    { 
-        // targetViolence = ofRandom(1, 10); // new random
+    {
         targetAmplitude = ofRandom(1, 5); // targets
-        targetViolence = ofMap(changeInterval, hbOffset - hbAmp, hbOffset + hbAmp, 1, 20);
-        targetAmplitude = ofMap(changeInterval, hbOffset - hbAmp, hbOffset + hbAmp, 1, 20);
-        targetSpeed = ofMap(changeInterval, hbOffset - hbAmp, hbOffset + hbAmp, 1, 10);
+        targetViolence = smoothRemapper(1.0f, 20.0f);
+        targetAmplitude = smoothRemapper(0.5f, 20.0f);
+        targetSpread = smoothRemapper(0.5f, 20.0f);
 
         lastChangeTime = currentTime;
     }
 
     // ease towards the target violence
-    // float easeAmount = 1.25f;
-    easeAmount = ofMap(changeInterval, hbOffset - hbAmp, hbOffset + hbAmp,  1.0f, 0.05f);
+    // float easeAmount = 0.25f;
+    // easeAmount = ofMap(changeInterval, hbOffset - hbAmp, hbOffset + hbAmp, 1.0f, 0.05f);
 
     currentViolence += (targetViolence - currentViolence) * easeAmount;
     currentAmplitude += (targetAmplitude - currentAmplitude) * easeAmount;
-    currentSpeed += (targetSpeed - currentSpeed) * easeAmount;
+    currentSpread += (targetSpread - currentSpread) * easeAmount;
 
     glm::vec3 position = model.getPosition();
     cam.lookAt(position);
@@ -179,25 +176,22 @@ void ofApp::draw()
     float currentTime = ofGetElapsedTimef();
     float timeSinceChange = currentTime - lastChangeTime;
 
-    
     // opacity gradual drop off
     opacity = ofMap(timeSinceChange, 0, changeInterval, 255, 0, true);
     opacity = ofClamp(opacity, 0, 255); // ensure opacity is within 0-255
 
+    // pause at random in darkness
+    if (ofRandom(1.0) < 1 && opacity < 10.0f) // chance
+    {
+        /* feels cool, like an engine maxing out rpm, but soon gets boring
+        ofSetColor(0, 0, 0, 0); // BUG: doesnt work becaue of the scope or what?
+        lastChangeTime = ofGetElapsedTimef() - changeInterval + 2.0f; */
 
-// pause at random in darkness
-if (ofRandom(1.0) < 1 && opacity < 10.0f) // chance 
-{
-    /* feels cool, like an engine maxing out rpm, but soon gets boring
-    ofSetColor(0, 0, 0, 0); // BUG: doesnt work becaue of the scope or what?
-    lastChangeTime = ofGetElapsedTimef() - changeInterval + 2.0f; */
-
-    /* feels like program just crashes, sleep doesnt work
-        ofSetColor(0, 0, 0, opacity); // BUG: doesnt work becaue of the scope or what?
-        ofSleepMillis(2000); 
-    */
-
-}
+        /* feels like program just crashes, sleep doesnt work
+            ofSetColor(0, 0, 0, opacity); // BUG: doesnt work becaue of the scope or what?
+            ofSleepMillis(2000);
+        */
+    }
     ofSetColor(255, 255, 255, opacity);
 
     drawWithMesh();
@@ -206,20 +200,25 @@ if (ofRandom(1.0) < 1 && opacity < 10.0f) // chance
 
     ofSetColor(255);
 
-    // ofDrawBitmapString("violence: " + ofToString(currentViolence), 10, 10);
-    // ofDrawBitmapString("interval: " + ofToString(changeInterval), 10, 30);
-    // ofDrawBitmapString("amplitude: " + ofToString(currentAmplitude), 10, 50);
-    // ofDrawBitmapString("speed: " + ofToString(currentSpeed), 10, 70);
-    // ofDrawBitmapString("opacity: " + ofToString(opacity), 10, 90);
-    
+    ofDrawBitmapString("violence: " + ofToString(currentViolence), 20, 40);
+    ofDrawBitmapString("interval: " + ofToString(changeInterval), 20, 60);
+    ofDrawBitmapString("amplitude: " + ofToString(currentAmplitude), 20, 80);
+    ofDrawBitmapString("spread: " + ofToString(currentSpread), 20, 100);
+    ofDrawBitmapString("opacity: " + ofToString(opacity), 20, 120);
+
+    ofDrawBitmapString("fps: " + ofToString(ofGetFrameRate()), 20, ofGetHeight() - 220);
     ofDrawBitmapString("distance: " + ofToString(cam.getDistance()), 20, ofGetHeight() - 200);
     ofDrawBitmapString("easing: " + ofToString(easeAmount), 20, ofGetHeight() - 180);
-    
+
     // network example
     for (unsigned int i = 1; i < stroke.size(); i++)
     {
         ofDrawLine(stroke[i - 1].x, stroke[i - 1].y, stroke[i].x, stroke[i].y);
     }
+}
+
+float ofApp::smoothRemapper(float outputMin, float outputMax){
+    return ofMap(changeInterval, hbOffset - hbAmp, hbOffset + hbAmp,  outputMin, outputMax);
 }
 
 // draw the model the built-in way
@@ -275,7 +274,7 @@ void ofApp::drawWithMesh()
     // float violence = ofMap(mouseX, 0, ofGetWidth(), 1, 20);
     violence = currentViolence;
     amplitude = currentAmplitude;
-    speedDampen = currentSpeed;
+    speedDampen = currentSpread;
 
     auto &verts = mesh.getVertices();
 
