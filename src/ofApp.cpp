@@ -38,7 +38,7 @@ int targetCamDis = 1500;
 // network
 int messageCounter = 0;
 bool isItUDPTime = true;
-bool debug = false;
+bool debug = true;
 
 // raspberry pi receiver
 float lastUdpSendTime;
@@ -158,7 +158,7 @@ void ofApp::update()
 
         // initiate transition
         transitionStart = ofGetElapsedTimef();
-        transitionDuration = ofRandom(2.0f, 4.0f);
+        transitionDuration = ofRandom(0.5f, 1.5f);
         isTransitioning = true;
 
         // target values for interpolation
@@ -254,9 +254,11 @@ void ofApp::update()
     // these targets will gradually change over specified interval
     if (currentTime - lastChangeTime > changeInterval)
     {
-        targetViolence = smoothRemapper(1.0f, 20.0f);
-        targetAmplitude = smoothRemapper(0.5f, 30.0f);
-        targetSpread = smoothRemapper(0.5f, 20.0f);
+        float randomizer = ofRandom(0.1f, 5.0f);
+        
+        targetViolence = smoothRemapper(1.0f, 20.0f + randomizer);
+        targetAmplitude = smoothRemapper(0.5f, 30.0f + randomizer);
+        targetSpread = smoothRemapper(0.5f, 20.0f + randomizer);
 
         lastChangeTime = currentTime;
     }
@@ -442,18 +444,12 @@ void ofApp::mouseDragged(int x, int y, int button)
 //--------------------------------------------------------------
 void ofApp::mousePressed(int x, int y, int button)
 {
-    // stroke.clear();
 }
 
 //--------------------------------------------------------------
 void ofApp::mouseReleased(int x, int y, int button)
 {
-    string message = "";
-    for (unsigned int i = 0; i < stroke.size(); i++)
-    {
-        message += ofToString(stroke[i].x) + "|" + ofToString(stroke[i].y) + "[/p]";
-    }
-    udpConnection.Send(message.c_str(), message.length());
+
 }
 
 //--------------------------------------------------------------
