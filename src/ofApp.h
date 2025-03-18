@@ -39,7 +39,8 @@ public:
 	void gotMessage(ofMessage msg);
 
 	// utilities
-    float smoothRemapper(float outputMin, float outputMax);
+	float smoothRemapper(float outputMin, float outputMax);
+	float smoothStep(float x);
 
 	// shape params
 	float violence;
@@ -55,14 +56,19 @@ public:
 	float timeSinceChange;
 	float normalizedTime;
 	float easedTime;
-	
+
+	// For parameter transitions
+	bool isTransitioning;
+	float transitionStart;
+	float transitionDuration;
+	float startChangeInterval, startHbOffset, startHbAmp, startHbFreq, startHbPhase;
+	float targetChangeInterval, targetHbOffset, targetHbAmp, targetHbFreq, targetHbPhase;
+
 	// this is our model we'll draw
 	ofxAssimpModelLoader model;
-	void drawWithModel();
 	void drawWithMesh();
 	ofEasyCam cam;
 	float camDis;
-
 
 	// network params
 	// pure data
