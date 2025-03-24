@@ -38,7 +38,7 @@ int targetCamDis = 1500;
 // network
 int messageCounter = 0;
 bool isItUDPTime = true;
-bool debug = true;
+bool debug = false;
 
 // raspberry pi receiver
 float lastUdpSendTime;
