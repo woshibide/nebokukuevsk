@@ -1,16 +1,14 @@
 /**
  *
- * OFDevCon Example Code Sprint
- * Model Distort Example
- *
- * This example loads a model and distorts it using noise
- *
- * The model is the open source and freely licensed balloon dog by Rob Myers, commissioned by furtherfield:
- * http://www.furtherfield.org/projects/balloon-dog-rob-myers
+ * Adaptation of OFDevCon Example Code Sprint
  *
  * Created by James George for openFrameworks workshop at Waves Festival Vienna sponsored by Lichterloh and Pratersauna
  * Adapted during ofDevCon on 2/23/2012
+ *
+ * Now adapted by Pyotr Goloub for the Metamorphoses 2025 exhibition
+ *
  */
+
 
 #pragma once
 
@@ -57,7 +55,7 @@ public:
 	float normalizedTime;
 	float easedTime;
 
-	// For parameter transitions
+	// transitions
 	bool isTransitioning;
 	float transitionStart;
 	float transitionDuration;

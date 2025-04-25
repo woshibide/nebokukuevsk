@@ -1,6 +1,6 @@
 /**
  *
- * OFDevCon Example Code Sprint
+ * Adaptation of OFDevCon Example Code Sprint
  *
  * Created by James George for openFrameworks workshop at Waves Festival Vienna sponsored by Lichterloh and Pratersauna
  * Adapted during ofDevCon on 2/23/2012
@@ -13,7 +13,8 @@
 #include <cmath>
 
 // for smooth change
-float changeInterval = 2.0f; // heartbeat
+float changeInterval = 2.0f; // the heartbeat
+
 // adrenaline spikes
 float hbOffset = 1.10f;
 float hbAmp = 0.75f;
@@ -55,13 +56,12 @@ void ofApp::setup()
     ofSetVerticalSync(true);
     ofBackground(0, 0, 0, 0);
 
-    // we need to call this for textures to work on models
-    //  ofDisableArbTex();
+    // for textures to work on models
+    // ofDisableArbTex();
 
     // this makes sure that the back of the model doesn't show through the front
     ofEnableDepthTest();
 
-    // now we load our model
     model.loadModel("characters/untitled.obj");
     // model.loadModel("characters/head.dae");
     // model.loadModel("characters/bust.dae");
@@ -78,14 +78,14 @@ void ofApp::setup()
      *    Network    *
      *****************/
 
-    // OF talks to pure data via 127.0.0.1:11999
+    // OF talks to pure data via port 11999
     ofxUDPSettings settings;
 
     settings.sendTo("127.0.0.1", 11999);
     settings.blocking = false;
 
     udpReceiver.Create();
-    udpReceiver.Bind(12000); // ame port as the Raspberry Pi server
+    udpReceiver.Bind(12000); // same port as the Raspberry Pi server
     udpReceiver.SetNonBlocking(true);
 
     udpConnection.Setup(settings);
@@ -95,13 +95,13 @@ void ofApp::setup()
 
 void ofApp::update()
 {
-    // Calculate elapsed time and ease variables
+    // calculate elapsed time and ease variables
     float currentTime = ofGetElapsedTimef();
     timeSinceChange = currentTime - lastChangeTime;
 
     if (ofRandom(5000) < 1.0)
     {
-        // Reset to base values before applying modifications
+        // resets to base values before applying modifications
         float baseChangeInterval = 1.50f;
         float baseHbOffset = 1.10f;
         float baseHbAmp = 0.75f;
@@ -116,6 +116,8 @@ void ofApp::update()
                                  baseHbFreq,
                                  baseHbPhase};
 
+
+        // fallback option for change of visuals if raspberry pi dies
         switch (choice)
         {
         case 0:
@@ -221,7 +223,7 @@ void ofApp::update()
     currentTime = ofGetElapsedTimef();
 
     /*********************
-     pure data sender
+        pure data sender
      **********************/
 
     int currentFrame = ofGetFrameNum();
@@ -245,11 +247,11 @@ void ofApp::update()
 
     currentTime = ofGetElapsedTimef();
 
-    // simple trigonometry for build up and down of the tempo
+    // simple ease-in-out for build up and down of the tempo
     // TODO: instead of sin cos tan use raspberry pi with distance sensor
-    // TODO: if nobody is around pick either sin or tan and play a loop
+    // TODO: if nobody is around pick one of the cases and play it
     changeInterval = hbAmp * sin(hbFreq * currentTime + hbPhase) + hbOffset;
-    // if value is above 1 shit breaks
+    // if value is above 1 shit breaks tho
 
     // these targets will gradually change over specified interval
     if (currentTime - lastChangeTime > changeInterval)
@@ -272,7 +274,6 @@ void ofApp::update()
     currentSpread += (targetSpread - currentSpread) * easeAmount;
     camDis += (targetCamDis - camDis) * easeAmount;
 
-    // Apply camera distance
     cam.setDistance(camDis);
 
     glm::vec3 position = model.getPosition();
@@ -290,7 +291,7 @@ void ofApp::draw()
 
     opacity = ofMap(easedTime, 0, 1, 255, 0);
 
-    // // opacity gradual drop off
+    // opacity drop off
     opacity = ofMap(timeSinceChange, 0, changeInterval, 255, 0, true);
     opacity = ofClamp(opacity, 0, 255); // ensure opacity is within 0-255
 
@@ -339,7 +340,7 @@ void ofApp::draw()
         ofDrawBitmapString("frequency: " + ofToString(hbFreq, 2), ofGetWidth() - 200, yPos + 80);
         ofDrawBitmapString("phase: " + ofToString(hbPhase, 2), ofGetWidth() - 200, yPos + 100);
     }
-    // network example
+    // RP snetwork 
     // for (unsigned int i = 1; i < stroke.size(); i++)
     // {
     //     ofDrawLine(stroke[i - 1].x, stroke[i - 1].y, stroke[i].x, stroke[i].y);
@@ -353,7 +354,7 @@ float ofApp::smoothRemapper(float outputMin, float outputMax)
 
 float ofApp::smoothStep(float x)
 {
-    // Smooth step function: 3x^2 - 2x^3
+    // smooth ease step function: 3x^2 - 2x^3
     return x * x * (3 - 2 * x);
 }
 
